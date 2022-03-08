@@ -11,7 +11,6 @@ self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-
         // cache.keys().then(request => console.log(request));
         return cache.addAll(urlToCache);
       }
@@ -19,5 +18,28 @@ self.addEventListener('install', function (event) {
 })
 
 self.addEventListener('activate', function (event) {
-  console.log(event);
+})
+
+self.addEventListener('fetch', function (event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function (response) {
+        if (response !== undefined) {
+          return response;
+        }
+        else {
+          return fetch(event.request)
+            .then(function (response) {
+              let responseClone = response.clone();
+              caches.open(CACHE_NAME)
+                .then(function (cache) {
+                  cache.put(event.request, responseClone);
+                });
+              return response;
+            }).catch(function (err) {
+              throw err;
+            });
+        }
+      })
+  )
 })
